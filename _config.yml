@@ -1,5 +1,5 @@
 title: Predicting Power Outage Duration
-description: A data science investigation into what drives how long the lights stay off
-remote_theme: pages-themes/midnight@v0.2.0
+description: A DSC 80 project investigating what drives how long the lights stay off
+remote_theme: pages-themes/hacker@v0.2.0
 plugins:
   - jekyll-remote-theme
