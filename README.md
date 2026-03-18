@@ -143,6 +143,7 @@ The original 56 column dataset was filtered down to the 20 columns listed below,
   <code class="language-plaintext highlighter-rouge">'OUTAGE.START.TIME'</code>,
   <code class="language-plaintext highlighter-rouge">'OUTAGE.RESTORATION.DATE'</code>,
   <code class="language-plaintext highlighter-rouge">'OUTAGE.RESTORATION.TIME'</code>
+
 ---
 
 ### Datetime Combination
@@ -174,12 +175,40 @@ For the following columns:
 
 ### Exploratory Data Analysis
 
+### Exploratory Data Analysis
+To better understand the structure of the data before modeling, we produced several exploratory visualizations.
+
+**Average Outage Duration by Year**
+We computed the mean outage duration for each year and plotted it as a line chart. The trend reveals notable year to year variation, with certain years experiencing significantly longer average outages, likely corresponding to seasons with severe weather events or large scale infrastructure failures.
+
+**Average Outage Duration by State**
+A bar chart of mean outage duration by state shows substantial geographic variation. Some states experience dramatically longer average outages than others, suggesting that regional factors such as climate exposure, grid age, and utility response capacity play a meaningful role in outage severity.
+
+**Urban Population % vs. Outage Duration**
+We aggregated outage duration and urban population percentage to the state level and plotted them as a scatter plot with an OLS trendline. The result shows a slight negative relationship, suggesting that more urbanized states may experience somewhat shorter outages on average, potentially due to denser infrastructure and faster crew deployment, though the correlation is not strong.
+
 <iframe
   src="assets/urban_vs_outage.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
+
+### Feature Importance Analysis
+To identify which factors most influence outage duration, we trained a Random Forest model on all 15 features and computed permutation importances on the held out test set. Permutation importance measures how much the model's performance degrades when a single feature's values are randomly shuffled, a larger drop indicates the model relies heavily on that feature.
+
+<iframe
+  src="assets/feature_importances.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+The results reveal a clear hierarchy. <code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code> dominates with an importance score of 0.578, far exceeding all other features. This confirms that the type of event causing an outage, whether severe weather, intentional attack, equipment failure, or other categories, is by far the strongest predictor of how long the outage will last. The second most important feature is <code class="language-plaintext highlighter-rouge">'YEAR'</code> (0.128), suggesting that outage durations have shifted over time, possibly reflecting changes in grid infrastructure, reporting practices, or climate patterns. <code class="language-plaintext highlighter-rouge">'TOTAL.SALES'</code> (0.083) rounds out the top three, indicating that states with higher electricity consumption tend to have more predictable outage duration patterns.
+
+The remaining features contribute little or negligibly. <code class="language-plaintext highlighter-rouge">'TOTAL.CUSTOMERS'</code>, <code class="language-plaintext highlighter-rouge">'ANOMALY.LEVEL'</code>, and <code class="language-plaintext highlighter-rouge">'CUSTOMERS.AFFECTED'</code> each show small but positive importance, while features like <code class="language-plaintext highlighter-rouge">'CLIMATE.REGION'</code>, <code class="language-plaintext highlighter-rouge">'NERC.REGION'</code>, and <code class="language-plaintext highlighter-rouge">'POPDEN_URBAN'</code> show near zero or slightly negative importances, meaning they add little predictive value beyond what other features already capture.
+
+Overall, **outage cause is the single most influential factor driving outage duration**.
 
 ## Assessment of Missingness
 
@@ -192,8 +221,6 @@ We believe <code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</
 ### Missingness Dependency
 We analyzed the missingness of <code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code> (46%) by running permutation tests against two other columns. We found the following relationships to <code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code>:
 
-Dependent on — <code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code>: We used Total Variation Distance as our test statistic since <code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code> is categorical. After 1000 permutations, we obtained a p-value of 0.0, meaning none of the shuffled TVDs matched or exceeded the observed TVD of ~0.179. We reject the null hypothesis. The missingness of <code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code> depends on <code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code>. This makes sense because different outage causes, such as severe weather storms vs. intentional attacks, likely have different reporting standards for demand loss.
-
 <iframe
   src="assets/missingness_cause.html"
   width="800"
@@ -201,7 +228,7 @@ Dependent on — <code class="language-plaintext highlighter-rouge">'CAUSE.CATEG
   frameborder="0"
 ></iframe>
 
-Not dependent on — <code class="language-plaintext highlighter-rouge">'MONTH'</code>: We used the absolute difference in group means as our test statistic. After 1000 permutations, we obtained a p-value of 0.235, well above our 0.05 significance level. We fail to reject the null — the missingness of <code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code> does not depend on <code class="language-plaintext highlighter-rouge">'MONTH'</code>. This is reasonable since there is no strong reason for reporting completeness to vary by time of year.
+Not dependent on <code class="language-plaintext highlighter-rouge">'MONTH'</code>: We used the absolute difference in group means as our test statistic. After 1000 permutations, we obtained a p-value of 0.235, well above our 0.05 significance level. We fail to reject the null the missingness of <code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code> does not depend on <code class="language-plaintext highlighter-rouge">'MONTH'</code>. This is reasonable since there is no strong reason for reporting completeness to vary by time of year.
 
 <iframe
   src="assets/missingness_month.html"
@@ -210,5 +237,44 @@ Not dependent on — <code class="language-plaintext highlighter-rouge">'MONTH'<
   frameborder="0"
 ></iframe>
 
+Dependent on <code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code>: We used Total Variation Distance as our test statistic since <code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code> is categorical. After 1000 permutations, we obtained a p-value of 0.0, meaning none of the shuffled TVDs matched or exceeded the observed TVD of ~0.179. We reject the null hypothesis. The missingness of <code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code> depends on <code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code>. This makes sense because different outage causes, such as severe weather storms vs. intentional attacks, likely have different reporting standards for demand loss.
 
+## Hypothesis Testing
 
+We tested whether a state's level of urbanization is associated with power outage duration. The reason we chose this test is because  we both thought that High urban % would impact wait times before doing any tests.
+
+**Null Hypothesis:** There is no relationship between a state's urban population percentage and the average power outage duration.
+
+**Alternative Hypothesis:** States with higher urban population percentages have shorter average outage durations.
+
+To conduct this test, we split all outage records into two groups based on the median <code class="language-plaintext highlighter-rouge">POPPCT_URBAN</code> value. Outages occurring in states with above median urban population were labeled "high" and the rest "low." Our test statistic is the difference in mean outage duration between the high and low groups (high minus low). We then ran a one sided permutation test with 1,000 iterations, shuffling the group labels and recomputing the difference each time. The p value represents the proportion of permuted differences that were less than or equal to the observed difference, since our alternative hypothesis predicts that higher urbanization leads to shorter durations.
+
+If the p value falls below 0.05, we reject the null and conclude that more urbanized states tend to experience shorter outages, possibly due to denser infrastructure and faster crew deployment. If not, we lack sufficient evidence to claim a relationship between urbanization and outage duration.
+
+<iframe
+  src="assets/hypothesis_test.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+## Framing a Prediction Problem
+We are predicting <code class="language-plaintext highlighter-rouge">OUTAGE.DURATION</code>, the duration of a major power outage in minutes. This is a **regression** problem since outage duration is a continuous numerical variable.
+
+We chose this response variable because understanding how long an outage will last is critical for utility companies, emergency responders, and affected communities to allocate resources and plan recovery efforts.
+
+Our evaluation metric is **Root Mean Squared Error (RMSE)**. We chose RMSE over other regression metrics like Mean Absolute Error (MAE) because RMSE penalizes large prediction errors more heavily, which is important in this context. Significantly underestimating a long outage could lead to inadequate emergency response. RMSE is also in the same units as our response variable (minutes), making it interpretable.
+
+For our features, we only use information that would be known at the **time the outage begins**:
+
+<code class="language-plaintext highlighter-rouge">CAUSE.CATEGORY</code> the cause of the outage is typically identified early on
+
+<code class="language-plaintext highlighter-rouge">ANOMALY.LEVEL</code> climate anomaly data is available from existing weather records
+
+We deliberately exclude features like <code class="language-plaintext highlighter-rouge">CUSTOMERS.AFFECTED</code>, <code class="language-plaintext highlighter-rouge">DEMAND.LOSS.MW</code>, and <code class="language-plaintext highlighter-rouge">OUTAGE.RESTORATION</code> since these are only fully known after the outage has progressed or ended.
+ 
+## Baseline Model
+
+## Final Model
+
+## Fairness Analysis
