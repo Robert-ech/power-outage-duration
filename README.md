@@ -1,4 +1,6 @@
- ## Introduction
+By Roberto Echieverria Sosa & Yue Hu
+
+## Introduction
 
 Power outages leave millions of Americans in the dark each year, disrupting communities and critical infrastructure nationwide. To better understand the patterns and causes of these events, this project analyzes and visualizes major power outages across the United States. The U.S. Department of Energy defines a major outage as one affecting at least 50,000 customers or causing an unplanned firm load loss of 300 megawatts or more. Using a dataset compiled by Purdue University’s LASCI Lab, this analysis incorporates outage severity, geographic and temporal data, climate conditions, land-use features, electricity consumption patterns, and economic characteristics of affected states.
 
@@ -105,79 +107,64 @@ strategies for improving grid resilience and operational efficiency.
   </tbody>
 </table>
 
-<hr>
-These features enables us to investigate climate-specific trends in outage severity and duration
-<hr/>
-
 ## Data Cleaning & Exploratory Data Analysis
 
-## Data Cleaning Summary
-
-The raw dataset contains 1,534 power outage records with 56 columns.
-Cleaning was performed in three main steps:
-
 ### Column Selection
-The original 56 column dataset was filtered down to the 20 columns listed below, retaining only those relevant to outage duration prediction.
+The original 56 column dataset was filtered down to the 20 columns listed below, retaining only those relevant to outage duration prediction. The way we processed the columns was by running random forest on the features to calculate correlation to outage time and keeping the most relavant ones. We also kept features needed to test our predictions.
 
-- <td><code class="language-plaintext highlighter-rouge">'YEAR'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'MONTH'</code></td>
-
-**Geographic Features**
-- <td><code class="language-plaintext highlighter-rouge">'U.S._STATE'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'NERC.REGION'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'CLIMATE.REGION'</code></td>
-
-**Outage Characteristics**
-- <td><code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'OUTAGE.DURATION'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'CUSTOMERS.AFFECTED'</code></td>
-
-**Climate**
-- <td><code class="language-plaintext highlighter-rouge">'ANOMALY.LEVEL'</code></td>
-
-**Economic Indicators**
-- <td><code class="language-plaintext highlighter-rouge">'TOTAL.PRICE'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'TOTAL.SALES'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'TOTAL.CUSTOMERS'</code></td>
-
-**Urban Demographics**
-- <td><code class="language-plaintext highlighter-rouge">'POPPCT_URBAN'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'POPDEN_URBAN'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'AREAPCT_URBAN'</code></td>
-
-**Timestamps**
-- <td><code class="language-plaintext highlighter-rouge">'OUTAGE.START.DATE'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'OUTAGE.START.TIME'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'OUTAGE.RESTORATION.DATE'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'OUTAGE.RESTORATION.TIME'</code></td>
+- **Temporal and geographic data:**  
+  <td><code class="language-plaintext highlighter-rouge">'YEAR'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'MONTH'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'U.S._STATE'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'NERC.REGION'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'CLIMATE.REGION'</code></td>
+- **Outage characteristics:**  
+  <td><code class="language-plaintext highlighter-rouge">'CAUSE.CATEGORY'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'OUTAGE.DURATION'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'CUSTOMERS.AFFECTED'</code></td>
+- **Climate:**  
+  <td><code class="language-plaintext highlighter-rouge">'ANOMALY.LEVEL'</code></td>
+- **Economic indicators:**  
+  <td><code class="language-plaintext highlighter-rouge">'TOTAL.PRICE'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'TOTAL.SALES'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'TOTAL.CUSTOMERS'</code></td>
+- **Urban demographics:**  
+  <td><code class="language-plaintext highlighter-rouge">'POPPCT_URBAN'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'POPDEN_URBAN'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'AREAPCT_URBAN'</code></td>
+- **Timestamps:**  
+  <td><code class="language-plaintext highlighter-rouge">'OUTAGE.START.DATE'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'OUTAGE.START.TIME'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'OUTAGE.RESTORATION.DATE'</code></td>,  
+  <td><code class="language-plaintext highlighter-rouge">'OUTAGE.RESTORATION.TIME'</code></td>
 
 ---
 
 ### Datetime Combination
-The separate columns: 
-<td><code class="language-plaintext highlighter-rouge">'OUTAGE.START.DATE'</code></td> +  
+The two separate columns: 
+<td><code class="language-plaintext highlighter-rouge">'OUTAGE.START.DATE'</code></td>   
 <td><code class="language-plaintext highlighter-rouge">'OUTAGE.START.TIME'</code></td>  
 
-combined into a single timestamp:
+We combined these columns into a single timestamp object to reduce redundancy. Ensuring outage start and end times were in their own unique column.
 
-- <td><code class="language-plaintext highlighter-rouge">'OUTAGE.START'</code></td>
+<td><code class="language-plaintext highlighter-rouge">'OUTAGE.START'</code></td>
 
 The same process was applied to restoration time, creating:
 
-- <td><code class="language-plaintext highlighter-rouge">'OUTAGE.RESTORATION'</code></td>
+<td><code class="language-plaintext highlighter-rouge">'OUTAGE.RESTORATION'</code></td>
 
 The original four date/time columns were then removed.
 
 ---
 
-### Zero-to-NaN Replacement
+### Zero to NaN Replacement
 
-Zero values were replaced with NaN. A value of 0 in these fields likely indicates missing data rather than a true zero (e.g., a recorded major outage cannot realistically have zero duration or affect zero customers).
+Zero values were replaced with NaN. A value of 0 in these fields likely indicates missing data rather than a true zero. For example a recorded major outage cannot realistically have zero duration or affect zero customers.
 
 For the following columns:
 
-- <td><code class="language-plaintext highlighter-rouge">'OUTAGE.DURATION'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'CUSTOMERS.AFFECTED'</code></td>
-- <td><code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code></td>
+<td><code class="language-plaintext highlighter-rouge">'OUTAGE.DURATION'</code></td>
+<td><code class="language-plaintext highlighter-rouge">'CUSTOMERS.AFFECTED'</code></td>
+<td><code class="language-plaintext highlighter-rouge">'DEMAND.LOSS.MW'</code></td>
 
