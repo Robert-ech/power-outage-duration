@@ -321,3 +321,33 @@ The baseline Linear Regression achieved an RMSE of approximately **7,182 minutes
 
 
 ## Fairness Analysis
+
+Does our model perform worse for outages in certain climate regions than others?
+
+Specifically, we compare model performance between:
+- **Group X**: Outages in the **Northeast** climate region
+- **Group Y**: Outages in the **South** climate region
+
+We chose these two groups because they represent distinct weather patterns (ice storms vs. 
+hurricanes) and are both well-represented in the dataset. If our model is fair, it should 
+predict outage durations with roughly equal accuracy for both regions.
+
+### Evaluation Metric
+Since this is a regression model, we use **RMSE** as our evaluation metric.
+
+### Hypotheses
+- **Null Hypothesis**: Our model is fair. Its RMSE for Northeast outages and South outages are roughly the same, and any differences are due to random chance.
+- **Alternative Hypothesis**: Our model is unfair. Its RMSE for Northeast outages is different from its RMSE for South outages.
+
+### Test Statistic
+We use the **absolute difference in RMSE** between the two groups:
+|RMSE_Northeast - RMSE_South|
+
+<iframe
+  src="assets/fairness_test.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+**Conclusion:** At the 0.05 significance level, we **FAIL TO REJECT** the null hypothesis. We do not have sufficient evidence to conclude that our model performs differently for Northeast vs. South outages. The observed difference in RMSE is consistent with random chance.
