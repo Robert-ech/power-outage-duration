@@ -1,4 +1,4 @@
-By Roberto Echieverria Sosa & Yue Hu
+By Roberto Echeverria Sosa & Yue Hu
 
 ## Introduction
 
@@ -175,7 +175,6 @@ For the following columns:
 
 ### Exploratory Data Analysis
 
-### Exploratory Data Analysis
 To better understand the structure of the data before modeling, we produced several exploratory visualizations.
 
 **Average Outage Duration by Year**
@@ -258,6 +257,8 @@ If the p value falls below 0.05, we reject the null and conclude that more urban
   frameborder="0"
 ></iframe>
 
+**Results** The p value we observed is **0.148** therefore we **fail to reject the null** and conclude that there is not a sufficient amount of evidence that a difference in urban population percentage changes the outage duration.
+
 ## Framing a Prediction Problem
 We are predicting <code class="language-plaintext highlighter-rouge">OUTAGE.DURATION</code>, the duration of a major power outage in minutes. This is a **regression** problem since outage duration is a continuous numerical variable.
 
@@ -275,6 +276,48 @@ We deliberately exclude features like <code class="language-plaintext highlighte
  
 ## Baseline Model
 
+Our baseline model is a Linear Regression using two features:
+
+<code class="language-plaintext highlighter-rouge">CAUSE.CATEGORY</code> (nominal) one hot encoded
+
+<code class="language-plaintext highlighter-rouge">ANOMALY.LEVEL</code> (quantitative) passed through as is
+
+We built a sklearn Pipeline with a ColumnTransformer to handle preprocessing and used an 80/20 train/test split. The baseline RMSE is approximately **7182 minutes**. This is not a great model. The high error is likely driven by extreme outliers in outage duration and the simplicity of using only two features. We would not consider this model "good" at this stage, but it establishes a benchmark to improve upon.
+
+<iframe
+  src="assets/baseline_model.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+
 ## Final Model
+
+### New Features
+
+We kept all baseline features and added two key predictors:
+
+**CUSTOMERS.AFFECTED** The scale of an outage is directly tied to restoration time. More affected customers means more widespread infrastructure damage, requiring more crews and coordination. We standardized this feature with a StandardScaler since values range from hundreds to millions.
+
+**CLIMATE.REGION** Different regions experience fundamentally different outage types. The Northeast faces ice storms, the South deals with hurricanes, the West encounters wildfires, each with distinct restoration timelines. We one hot encoded this categorical feature.
+
+We also retained <code class="language-plaintext highlighter-rouge">MONTH</code> as a numeric feature to capture seasonal patterns, and applied a QuantileTransformer to <code class="language-plaintext highlighter-rouge">ANOMALY.LEVEL</code> to reduce the influence of its skewed distribution.
+
+### Modeling Algorithm and Hyperparameters
+
+We chose a **RandomForestRegressor** because it is robust to the heavy tailed outliers in outage duration and can capture non linear interactions between features. We tuned hyperparameters using **5 fold GridSearchCV** over <code class="language-plaintext highlighter-rouge">n_estimators</code> [50, 100, 200, 300] and <code class="language-plaintext highlighter-rouge">max_depth</code> [5, 10, 15, 20, None], selecting the best combination by minimizing negative mean squared error across all five folds.
+
+### Performance Improvement
+
+The baseline Linear Regression achieved an RMSE of approximately **7,182 minutes**. The final Random Forest model with additional features and tuned hyperparameters achieved a lower RMSE, confirming that richer features and a more flexible algorithm improved outage duration predictions.
+
+<iframe
+  src="assets/final_model.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
 
 ## Fairness Analysis
